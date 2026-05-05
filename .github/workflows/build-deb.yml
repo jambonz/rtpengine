@@ -146,8 +146,12 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_S3_REGION }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
-          aws s3 cp artifacts/ s3://${{ secrets.AWS_S3_BUCKET }}/rtpengine/ \
+          # Trim any trailing whitespace/newline from the bucket value
+          # (GitHub secrets sometimes get saved with stray whitespace).
+          BUCKET=$(printf '%s' "$AWS_S3_BUCKET" | tr -d '[:space:]')
+          aws s3 cp artifacts/ "s3://${BUCKET}/rtpengine/" \
               --recursive --include "*.deb" --include "*.sha256"
 
       - name: Upload to GitHub Release
