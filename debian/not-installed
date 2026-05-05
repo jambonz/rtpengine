@@ -1,0 +1,11 @@
+# Files produced by the upstream Makefile but intentionally not shipped
+# in any of our binary packages. Listing them here tells dh_missing not
+# to treat them as orphans.
+#
+# We dropped recording-daemon and perftest from debian/control (we don't
+# ship those .deb packages), but `make install` still produces their
+# binaries during the build.
+
+usr/bin/rtpengine-perftest
+usr/bin/rtpengine-recording
+usr/share/man/man8/rtpengine-recording.8
