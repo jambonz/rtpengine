@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-deb:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
@@ -53,8 +53,7 @@ jobs:
             build-essential \
             devscripts \
             debhelper \
-            dh-dkms \
-            dh-sequence-dkms \
+            dkms \
             default-libmysqlclient-dev \
             discount \
             gperf \
@@ -64,6 +63,7 @@ jobs:
             libavutil-dev \
             libbcg729-dev \
             libbencode-perl \
+            libcjson-dev \
             libcrypt-openssl-rsa-perl \
             libcrypt-rijndael-perl \
             libcurl4-openssl-dev \
