@@ -74,7 +74,7 @@ jobs:
             debhelper \
             dh-sequence-dkms \
             dkms \
-            systemd-dev \
+            systemd \
             default-libmysqlclient-dev \
             discount \
             gperf \
