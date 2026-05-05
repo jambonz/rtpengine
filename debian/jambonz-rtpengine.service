@@ -1,18 +1,19 @@
 [Unit]
-Description=NGCP RTP/media Proxy Daemon
+Description=jambonz RTP/media proxy
 After=network-online.target
 After=remote-fs.target
 Requires=network-online.target
 
 [Service]
 Type=notify
-EnvironmentFile=/etc/default/ngcp-rtpengine-daemon
+EnvironmentFile=-/etc/default/rtpengine
+EnvironmentFile=-/var/lib/jambonz/host.env
 RuntimeDirectory=rtpengine
-PIDFile=/run/rtpengine/ngcp-rtpengine-daemon.pid
+PIDFile=/run/rtpengine/rtpengine.pid
 User=rtpengine
 Group=rtpengine
 LimitNOFILE=150000
-ExecStart=/usr/bin/rtpengine -f -E --no-log-timestamps --pidfile /run/rtpengine/ngcp-rtpengine-daemon.pid --config-file /etc/rtpengine/rtpengine.conf
+ExecStart=/usr/bin/rtpengine -f -E --no-log-timestamps --pidfile /run/rtpengine/rtpengine.pid --config-file /etc/rtpengine/rtpengine.conf
 
 # Service cannot create writable executable memory mappings that are writable and executable at the same time
 MemoryDenyWriteExecute=true

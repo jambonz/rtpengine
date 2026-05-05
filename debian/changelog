@@ -1,3 +1,23 @@
+jambonz-rtpengine (mr14.1.1.8-jambonz1) bookworm; urgency=medium
+
+  * Initial release of the jambonz fork of sipwise/rtpengine.
+  * Source: sipwise/rtpengine tag mr14.1.1.8 (no source code changes).
+  * Packaging: debian/ rebranded for jambonz apt repo distribution.
+    - Source package: ngcp-rtpengine -> jambonz-rtpengine
+    - Binary packages reduced to: jambonz-rtpengine (daemon),
+      jambonz-rtpengine-dkms (kernel module), jambonz-rtpengine-utils.
+      Dropped the recording-daemon, perftest, dev, and meta packages
+      (re-introduce later if needed).
+    - SysV init script and the multi-instance @.service template removed;
+      systemd-only on bookworm.
+    - Service unit renamed ngcp-rtpengine-daemon.service -> rtpengine.service.
+    - Defaults file moved /etc/default/ngcp-rtpengine-daemon ->
+      /etc/default/rtpengine. Service also reads /var/lib/jambonz/host.env
+      for terraform-driven overrides.
+    - DKMS package PACKAGE_NAME bumped to jambonz-rtpengine.
+
+ -- jambonz <support@jambonz.org>  Tue, 05 May 2026 18:00:00 +0000
+
 ngcp-rtpengine (14.1.1.8+0~mr14.1.1.8) unstable; urgency=medium
 
   [ Richard Fuchs ]
