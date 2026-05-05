@@ -1,4 +1,4 @@
-jambonz-rtpengine (mr14.1.1.8-jambonz1) bookworm; urgency=medium
+jambonz-rtpengine (14.1.1.8-jambonz1) bookworm; urgency=medium
 
   * Initial release of the jambonz fork of sipwise/rtpengine.
   * Source: sipwise/rtpengine tag mr14.1.1.8 (no source code changes).

@@ -2,12 +2,12 @@ name: Build Debian Package
 
 # Triggers:
 #   - workflow_dispatch (manual run from the Actions tab)
-#   - push of a tag matching mr*-jambonz* (our fork's release tags)
+#   - push of a tag matching v*-jambonz* (our fork's release tags)
 on:
   workflow_dispatch:
   push:
     tags:
-      - 'mr*-jambonz*'
+      - 'v*-jambonz*'
 
 # Serialize concurrent runs so simultaneous tag pushes don't race the
 # apt-repo dispatch / S3 upload.
@@ -18,9 +18,23 @@ concurrency:
 jobs:
   build-deb:
     runs-on: ubuntu-24.04
+    # Build inside a Debian bookworm container so the produced .deb
+    # links against the libs customers run on bookworm (libssl3,
+    # libavcodec59, libwebsockets, etc.) — not noble's newer libs.
+    container:
+      image: debian:bookworm
     timeout-minutes: 45
 
     steps:
+      - name: Bootstrap container
+        # debian:bookworm is minimal — install the tools the rest of the
+        # workflow needs (git for actions/checkout, curl for the dispatch,
+        # awscli for S3 upload, gnupg for signed-by apt sources).
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+              git curl ca-certificates gnupg awscli xz-utils
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -30,26 +44,20 @@ jobs:
         id: version
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo "0.0.1")
-          # Strip a leading 'v' if present (we don't normally use one)
+          # Debian package versions must start with a digit. Strip the 'v'.
           VERSION=${VERSION#v}
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION}"
 
       - name: Update debian changelog version
         run: |
-          # Replace the top changelog entry's version with the tag-derived one
-          # so dpkg-buildpackage stamps the resulting .deb correctly.
-          # The first stanza is the jambonz one we maintain.
+          # Replace the top stanza's version with the tag-derived one.
           sed -i "0,/^jambonz-rtpengine (.*) bookworm/s//jambonz-rtpengine (${{ steps.version.outputs.VERSION }}) bookworm/" debian/changelog
           head -3 debian/changelog
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update -qq
-          # Pull deps from debian/control. Most are in jammy by name; a few
-          # version constraints (libavcodec >= 6:10) need bookworm-backports
-          # or are met on jammy by happy accident — we'll see what fails.
-          sudo apt-get install -y --no-install-recommends \
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             build-essential \
             devscripts \
             debhelper \
@@ -103,10 +111,10 @@ jobs:
 
       - name: Build Debian package
         run: |
-          # liburing-dev on jammy may be < 2.3 (the version constraint in
-          # debian/control). Build with the nouring profile so we don't
-          # require a newer one. Same for codec-chain (we never enable it).
-          DEB_BUILD_PROFILES="pkg.jambonz-rtpengine.nouring" dpkg-buildpackage -b -us -uc
+          # Bookworm's liburing-dev is 2.3 (matches the constraint), so we
+          # don't need the nouring profile. Keep the no-codec-chain build
+          # (default) since we don't ship ngcp-libcodec-chain-dev.
+          dpkg-buildpackage -b -us -uc
 
       - name: Prepare artifacts
         run: |
@@ -120,14 +128,11 @@ jobs:
           done
           ls -lh
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_S3_REGION }}
-
       - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_S3_REGION }}
         run: |
           aws s3 cp artifacts/ s3://${{ secrets.AWS_S3_BUCKET }}/rtpengine/ \
               --recursive --include "*.deb" --include "*.sha256"
