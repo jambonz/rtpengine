@@ -43,8 +43,19 @@ jobs:
       - name: Get version from git tag
         id: version
         run: |
-          VERSION=$(git describe --tags --always 2>/dev/null || echo "0.0.1")
-          # Debian package versions must start with a digit. Strip the 'v'.
+          # GitHub's container support mounts the workspace owned by a uid
+          # the container's git considers 'dubious'. Allow it explicitly so
+          # `git describe` works.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Prefer the actual triggering tag if we're on one (most common
+          # for production runs); fall back to git describe for manual
+          # workflow_dispatch runs.
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION=$(git describe --tags --always 2>/dev/null || echo "0.0.1")
+          fi
+          # Debian package versions must start with a digit. Strip 'v'.
           VERSION=${VERSION#v}
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION}"
@@ -61,7 +72,9 @@ jobs:
             build-essential \
             devscripts \
             debhelper \
+            dh-sequence-dkms \
             dkms \
+            systemd-dev \
             default-libmysqlclient-dev \
             discount \
             gperf \
