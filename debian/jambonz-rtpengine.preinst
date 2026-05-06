@@ -1,0 +1,22 @@
+#!/bin/sh
+# Create the rtpengine system user/group BEFORE the .service file is
+# unpacked and before postinst's #DEBHELPER# block triggers
+# daemon-reload + start. Otherwise systemd's first start can race with
+# adduser and exit with code 217 ("user not found"), which prints a
+# noisy "Job for jambonz-rtpengine.service failed" line during apt
+# install — alarming for customers even though Restart=always recovers
+# a few seconds later.
+
+set -e
+
+case "$1" in
+    install|upgrade)
+        adduser --system --home /nonexistent --gecos rtpengine \
+            --no-create-home --disabled-password \
+            --group --quiet rtpengine || true
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
