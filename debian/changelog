@@ -1,3 +1,15 @@
+jambonz-rtpengine (14.1.1.8-jambonz4) bookworm; urgency=medium
+
+  * etc/rtpengine.conf: bind HTTP/WS on 127.0.0.1:8080 (was localhost:2225)
+    and add dtmf-log-dest = 127.0.0.1:22223. Aligns the conf-file defaults
+    with what the rest of the jambonz stack expects: sbc-rtpengine-sidecar
+    connects to ws://127.0.0.1:8080 by default (rtpengine-client lib) and
+    binds a UDP socket on :22223 for DTMF events. Without these, the
+    sidecar crashed on first stats-collection tick with ECONNREFUSED, and
+    DTMF events were silently dropped.
+
+ -- jambonz <support@jambonz.org>  Wed, 06 May 2026 23:50:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz3) bookworm; urgency=medium
 
   * Create rtpengine user/group in preinst (was postinst). Eliminates
