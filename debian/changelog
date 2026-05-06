@@ -1,3 +1,14 @@
+jambonz-rtpengine (14.1.1.8-jambonz2) bookworm; urgency=medium
+
+  * etc/rtpengine.conf: change listen-ng from sipwise default
+    localhost:2223 to the jambonz convention 127.0.0.1:22222.
+    The jambonz Node apps (sbc-inbound, sbc-outbound, feature-server)
+    target UDP :22222 via JAMBONES_RTPENGINES; with the upstream
+    default an inbound INVITE would hang silently for ~7s at sbc-inbound
+    waiting for a reply rtpengine never received (UDP, fire-and-forget).
+
+ -- jambonz <support@jambonz.org>  Wed, 06 May 2026 12:00:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz1) bookworm; urgency=medium
 
   * Initial release of the jambonz fork of sipwise/rtpengine.
