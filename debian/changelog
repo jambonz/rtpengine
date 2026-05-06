@@ -1,3 +1,15 @@
+jambonz-rtpengine (14.1.1.8-jambonz3) bookworm; urgency=medium
+
+  * Create rtpengine user/group in preinst (was postinst). Eliminates
+    a startup race where systemd's first attempt to start the daemon
+    failed with exit code 217 ("user not found"), printing a noisy
+    "Job for jambonz-rtpengine.service failed" line during apt install
+    on a fresh box. Restart=always recovered after a few seconds, but
+    the message alarmed customers. By creating the user before the
+    .service file is unpacked the first start now succeeds cleanly.
+
+ -- jambonz <support@jambonz.org>  Wed, 06 May 2026 23:30:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz2) bookworm; urgency=medium
 
   * etc/rtpengine.conf: change listen-ng from sipwise default
