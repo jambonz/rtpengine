@@ -1,11 +1,11 @@
-Name:		ngcp-rtpengine
-Version:	14.1.1.8+0~mr14.1.1.8
-Release:	1%{?dist}
-Summary:	The Sipwise NGCP rtpengine daemon
+Name:		jambonz-rtpengine
+Version:	14.1.1.8
+Release:	jambonz1%{?dist}
+Summary:	jambonz RTP/media proxy daemon (fork of Sipwise NGCP rtpengine)
 Group:		System Environment/Daemons
 License:	GPLv3
-URL:		https://github.com/sipwise/rtpengine
-Source0:	https://github.com/sipwise/rtpengine/archive/refs/tags/mr%{version}.tar.gz?download=%{name}-%{version}.tar.gz
+URL:		https://github.com/jambonz/rtpengine
+Source0:	%{name}-%{version}.tar.gz
 Conflicts:	%{name}-kernel < %{version}-%{release}
 
 %global with_transcoding 1
@@ -173,7 +173,7 @@ RTPENGINE_VERSION="\"%{version}-%{release}\"" make DESTDIR=%{buildroot} with_tra
 ## Install the init.d script and configuration file
 %if 0%{?has_systemd_dirs}
 install -D -p -m644 el/%{binname}.service \
-	%{buildroot}%{_unitdir}/%{binname}.service
+	%{buildroot}%{_unitdir}/%{name}.service
 %else
 install -D -p -m755 el/%{binname}.init \
 	%{buildroot}%{_initrddir}/%{name}
@@ -220,7 +220,7 @@ install -D -p -m644 kernel-module/common_stats.h \
 	 %{buildroot}%{_usrsrc}/%{name}-%{version}-%{release}/common_stats.h
 install -D -p -m644 kernel-module/*.inc \
 	 %{buildroot}%{_usrsrc}/%{name}-%{version}-%{release}/
-install -D -p -m644 debian/ngcp-rtpengine-kernel-dkms.dkms %{buildroot}%{_usrsrc}/%{name}-%{version}-%{release}/dkms.conf
+install -D -p -m644 debian/%{name}-dkms.dkms %{buildroot}%{_usrsrc}/%{name}-%{version}-%{release}/dkms.conf
 sed -i -e "s/#MODULE_VERSION#/%{version}-%{release}/g" %{buildroot}%{_usrsrc}/%{name}-%{version}-%{release}/dkms.conf
 %if 0%{?with_transcoding} > 0
 install -m755 -d %{buildroot}%{_datarootdir}/%{binname}-perftest
@@ -228,9 +228,11 @@ install -m444 fixtures/* %{buildroot}%{_datarootdir}/%{binname}-perftest
 %endif
 
 %pre
-getent group %{name} >/dev/null || /usr/sbin/groupadd -r %{name}
-getent passwd %{name} >/dev/null || /usr/sbin/useradd -r -g %{name} \
-	-s /sbin/nologin -c "%{name} daemon" -d %{_sharedstatedir}/%{name} %{name}
+# Match the user/group created by the jambonz Debian package so the systemd
+# unit's User=rtpengine resolves identically across distros.
+getent group rtpengine >/dev/null || /usr/sbin/groupadd -r rtpengine
+getent passwd rtpengine >/dev/null || /usr/sbin/useradd -r -g rtpengine \
+	-s /sbin/nologin -c "rtpengine daemon" -d %{_sharedstatedir}/%{name} rtpengine
 
 
 %post
@@ -264,8 +266,8 @@ true
 %preun
 if [ $1 = 0 ] ; then
 %if 0%{?has_systemd_dirs}
-  systemctl stop %{binname}.service
-  systemctl disable %{binname}.service
+  systemctl stop %{name}.service
+  systemctl disable %{name}.service
 
 %else
   /sbin/service %{name} stop >/dev/null 2>&1
@@ -287,7 +289,7 @@ true
 # CLI table helper
 # init.d script and configuration file
 %if 0%{?has_systemd_dirs}
-%{_unitdir}/%{binname}.service
+%{_unitdir}/%{name}.service
 %else
 %{_initrddir}/%{name}
 %endif
@@ -295,7 +297,7 @@ true
 # default config
 %config(noreplace) %{_sysconfdir}/%{binname}/%{binname}.conf
 # spool directory
-%attr(0750,%{name},%{name}) %dir %{_var}/spool/%{binname}
+%attr(0750,rtpengine,rtpengine) %dir %{_var}/spool/%{binname}
 # Documentation
 %doc LICENSE README.md debian/changelog debian/copyright
 %{_mandir}/man8/%{binname}.8*
@@ -332,11 +334,15 @@ true
 # Default config
 %config(noreplace) %{_sysconfdir}/%{binname}/%{binname}-recording.conf
 # recording directory
-%attr(0750,%{name},%{name}) %dir %{_sharedstatedir}/%{binname}-recording
+%attr(0750,rtpengine,rtpengine) %dir %{_sharedstatedir}/%{binname}-recording
 %{_mandir}/man8/%{binname}-recording.8*
 %endif
 
 %changelog
+* Thu May 14 2026 Dave Horton <daveh@drachtio.org> - 14.1.1.8-jambonz1
+  - Fork as jambonz-rtpengine; rename package, install systemd unit as
+    jambonz-rtpengine.service, run as rtpengine user/group (matching the
+    Debian package), reuse debian/jambonz-rtpengine-dkms.dkms.
 * Thu Nov 11 2021 Anton Voylenko <anton.voylenko@novait.com.ua>
   - update packages metadata
   - remove the "archname" variable
