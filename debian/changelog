@@ -1,3 +1,20 @@
+jambonz-rtpengine (14.1.1.8-jambonz5) bookworm; urgency=medium
+
+  * debian/jambonz-rtpengine.service: auto-detect public/private IPs and
+    pass them as --interface private/${LOCAL_IP} --interface public/${LOCAL_IP}!${PUBLIC_IP}.
+    Mirrors the drachtio.service pattern (ExecStartPre with hostname -I
+    and curl https://api.ipify.org fallbacks; operators can pre-set
+    RTPENGINE_LOCAL_IP / RTPENGINE_PUBLIC_IP via /etc/default/rtpengine
+    or /var/lib/jambonz/host.env to skip detection). Without this, the
+    shipped [interface-default] address=any made rtpengine advertise the
+    private address in SDP from NAT'd cloud VMs and external audio failed.
+    Also drops the upstream systemd sandboxing (ProtectSystem=strict,
+    SystemCallFilter, capability restrictions, etc.) so the ExecStartPre
+    detection and systemctl set-environment calls work — matches what
+    drachtio's service ships with.
+
+ -- jambonz <support@jambonz.org>  Mon, 25 May 2026 00:00:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz4) bookworm; urgency=medium
 
   * etc/rtpengine.conf: bind HTTP/WS on 127.0.0.1:8080 (was localhost:2225)
