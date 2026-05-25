@@ -1,3 +1,12 @@
+jambonz-rtpengine (14.1.1.8-jambonz7) bookworm; urgency=medium
+
+  * Fix regression in jambonz6: `cut -d' ' -f1` had nested single quotes
+    inside the outer `sh -c '...'` block, which systemd's parser
+    interpreted as quote boundaries. Replace with `set -- $(hostname -I);
+    echo $1` — no inner quotes needed.
+
+ -- jambonz <support@jambonz.org>  Mon, 25 May 2026 19:00:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz6) bookworm; urgency=medium
 
   * debian/jambonz-rtpengine.service: replace `awk "{print \$1}"` with
