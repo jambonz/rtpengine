@@ -20,10 +20,10 @@ PIDFile=/run/rtpengine/rtpengine.pid
 # fails behind NAT.
 ExecStartPre=/bin/sh -c '\
     [ -n "$RTPENGINE_LOCAL_IP" ] || \
-      systemctl set-environment RTPENGINE_LOCAL_IP=$(hostname -I | awk "{print \$1}")'
+      systemctl set-environment RTPENGINE_LOCAL_IP=$(hostname -I | cut -d' ' -f1)'
 ExecStartPre=/bin/sh -c '\
     [ -n "$RTPENGINE_PUBLIC_IP" ] || \
-      systemctl set-environment RTPENGINE_PUBLIC_IP=$(curl -s --max-time 5 https://api.ipify.org || hostname -I | awk "{print \$1}")'
+      systemctl set-environment RTPENGINE_PUBLIC_IP=$(curl -s --max-time 5 https://api.ipify.org || hostname -I | cut -d' ' -f1)'
 
 ExecStart=/usr/bin/rtpengine -f -E --no-log-timestamps \
     --pidfile /run/rtpengine/rtpengine.pid \

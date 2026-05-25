@@ -1,3 +1,15 @@
+jambonz-rtpengine (14.1.1.8-jambonz6) bookworm; urgency=medium
+
+  * debian/jambonz-rtpengine.service: replace `awk "{print \$1}"` with
+    `cut -d' ' -f1` in the ExecStartPre IP-detection hooks. systemd's
+    unit-file parser doesn't recognize `\$` as a valid escape sequence
+    and logs "Ignoring unknown escape sequences" on every (re)start.
+    The command still worked (sh unescaped \$ back to $ inside the
+    double-quoted awk script) but the warning was noisy in journalctl.
+    Same fix landed in drachtio.service.
+
+ -- jambonz <support@jambonz.org>  Mon, 25 May 2026 18:00:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz5) bookworm; urgency=medium
 
   * debian/jambonz-rtpengine.service: auto-detect public/private IPs and
