@@ -142,7 +142,14 @@ Or trigger manually from the Actions tab → "Build Debian Package" → "Run wor
 If GitHub's arm64 runners aren't available, you can build locally on an M1/M2 Mac:
 
 ```bash
-docker run --rm --platform linux/arm64 -v "$PWD":/src -w /src debian:bookworm bash -c '
+# Checkout the tag you want to build
+git checkout v14.1.1.8-jambonz9  # replace with your tag
+
+# Set the version (must match the tag, without the leading 'v')
+VERSION=14.1.1.8-jambonz9
+
+# Build
+docker run --rm --platform linux/arm64 -v "$PWD":/src -w /src -e VERSION="$VERSION" debian:bookworm bash -c '
   apt-get update -qq
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential devscripts debhelper dh-sequence-dkms dkms systemd \
@@ -158,6 +165,7 @@ docker run --rm --platform linux/arm64 -v "$PWD":/src -w /src debian:bookworm ba
     libspandsp-dev libssl-dev libswresample-dev libsystemd-dev \
     libtest2-suite-perl liburing-dev libwebsockets-dev libwww-perl \
     libxtables-dev pandoc pkgconf python3 python3-websockets zlib1g-dev
+  sed -i "0,/^jambonz-rtpengine (.*) bookworm/s//jambonz-rtpengine ($VERSION) bookworm/" debian/changelog
   dpkg-buildpackage -b -us -uc
   cp ../*.deb /src/
 '
@@ -170,6 +178,9 @@ gh workflow run "Publish apt repository" --repo jambonz/apt-repo
 
 # Check status (note: --repo is required since you're in the rtpengine directory)
 gh run list --workflow=publish.yml --repo jambonz/apt-repo --limit 1
+
+# Return to master
+git checkout master
 ```
 
 ### Building RPM packages
