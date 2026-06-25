@@ -165,8 +165,11 @@ docker run --rm --platform linux/arm64 -v "$PWD":/src -w /src debian:bookworm ba
 # Upload to S3
 aws s3 cp jambonz-rtpengine_*_arm64.deb s3://jambonz-debian-packages/rtpengine/
 
-# Trigger apt repo refresh (requires gh CLI and APT_REPO_PAT)
+# Trigger apt repo refresh
 gh workflow run "Publish apt repository" --repo jambonz/apt-repo
+
+# Check status (note: --repo is required since you're in the rtpengine directory)
+gh run list --workflow=publish.yml --repo jambonz/apt-repo --limit 1
 ```
 
 ### Building RPM packages
