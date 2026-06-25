@@ -1,3 +1,16 @@
+jambonz-rtpengine (14.1.1.8-jambonz9) bookworm; urgency=medium
+
+  * docs: fix gh workflow status check command in README
+
+ -- jambonz <support@jambonz.org>  Wed, 25 Jun 2026 12:00:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz8) bookworm; urgency=medium
+
+  * docs: add local arm64 build instructions to README
+  * ci: GitHub arm64 runners unavailable; document local build workflow
+
+ -- jambonz <support@jambonz.org>  Wed, 25 Jun 2026 11:00:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz7) bookworm; urgency=medium
 
   * Fix regression in jambonz6: `cut -d' ' -f1` had nested single quotes
