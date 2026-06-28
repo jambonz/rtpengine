@@ -8,8 +8,8 @@ if [ "$1" = 'configure' ]; then
 	# DKMS just built and installed nft_rtpengine.ko against the running
 	# kernel. Restart the daemon (if installed) so it picks up the module.
 	if [ -d /run/systemd/system ] && \
-	   systemctl list-unit-files jambonz-rtpengine.service >/dev/null 2>&1; then
-		systemctl restart jambonz-rtpengine || true
+	   systemctl list-unit-files rtpengine.service >/dev/null 2>&1; then
+		systemctl restart rtpengine || true
 	fi
 fi
 

@@ -3,7 +3,7 @@
 # unpacked and before postinst's #DEBHELPER# block triggers
 # daemon-reload + start. Otherwise systemd's first start can race with
 # adduser and exit with code 217 ("user not found"), which prints a
-# noisy "Job for jambonz-rtpengine.service failed" line during apt
+# noisy "Job for rtpengine.service failed" line during apt
 # install — alarming for customers even though Restart=always recovers
 # a few seconds later.
 
