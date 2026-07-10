@@ -133,6 +133,9 @@ jobs:
           ls -lh
 
       - name: Upload to S3
+        # Only publish artifacts for real release tags. workflow_dispatch runs
+        # (used for build verification) must not push to the published bucket.
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
