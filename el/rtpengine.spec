@@ -58,9 +58,11 @@ Requires(pre):	shadow-utils
 %if 0%{?rhel} >= 8
 BuildRequires:	pandoc ncurses-devel
 %endif
-%if 0%{?rhel} <= 9
-BuildRequires:	pkgconfig(libiptc)
-%endif
+# libiptc (legacy xtables backend) is intentionally NOT required. rtpengine
+# installs its kernel-forwarding rule via nftables (its default, and what the
+# jambonz units use); daemon/iptables.c compiles to a no-op without
+# -DHAVE_LIBIPTC. EL9's iptables-devel no longer provides pkgconfig(libiptc),
+# so requiring it only breaks the build with no functional benefit.
 
 %if 0%{?with_transcoding} > 0
 BuildRequires:	ffmpeg-devel

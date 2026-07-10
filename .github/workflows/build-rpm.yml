@@ -80,9 +80,10 @@ jobs:
           echo "Building Version=${VERSION} Release=${RELEASE}"
 
       - name: Install build dependencies
-        # Mirror the BuildRequires in el/rtpengine.spec. iptables-devel
-        # provides pkgconfig(libiptc). spandsp-devel and opus-devel come
-        # from EPEL/CRB; ffmpeg-devel from RPM Fusion.
+        # Mirror the BuildRequires in el/rtpengine.spec. iptables-devel is
+        # needed by the -kernel subpackage (NOT for libiptc — the daemon uses
+        # nftables). spandsp-devel and opus-devel come from EPEL/CRB;
+        # ffmpeg-devel from RPM Fusion.
         run: |
           dnf install -y \
             gcc make pkgconfig \
