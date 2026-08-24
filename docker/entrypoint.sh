@@ -9,8 +9,24 @@ case $CLOUD in
     PUBLIC_IP=$(curl -s -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
     ;;
   aws)
-    LOCAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-    PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+    # Ask for an IMDSv2 token first and use it when we get one. A node with
+    # http_tokens=required -- the default the jambonz EKS terraform sets, and
+    # increasingly the default everywhere -- answers every unauthenticated
+    # metadata request with 401 and an empty body. Without this, PUBLIC_IP and
+    # LOCAL_IP both come back empty, MY_IP falls back to `hostname -I`, and
+    # rtpengine ends up with "interface=public/<private ip>" and no advertised
+    # address: it then puts a VPC-private address in the SDP, the far end sends
+    # RTP nowhere, and every call is one-way silence.
+    # The token PUT is harmless on an IMDSv1 node, so there is one code path.
+    TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+              -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || true)
+    if [ -n "$TOKEN" ]; then
+      LOCAL_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+      PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+    else
+      LOCAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+    fi
     ;;
   scaleway)
     LOCAL_IP=$(curl -s --local-port 1-1024 http://169.254.42.42/conf | grep PRIVATE_IP | cut -d = -f 2)
