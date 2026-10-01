@@ -33,3 +33,11 @@ execute_before_dh_auto_install-indep:
 # as upstream uses); pass an explicit -p so dh_dkms picks the right one.
 override_dh_dkms:
 	dh_dkms -pjambonz-rtpengine-dkms -V $(DEB_VERSION_UPSTREAM)
+
+# The unit file debian/jambonz-rtpengine.rtpengine.service installs as
+# rtpengine.service (kept under the long-standing "rtpengine" name so the
+# monitoring agent, jambonz-updater and deploy automation that reference
+# `systemctl ... rtpengine` keep working). Be explicit so it's reliably
+# installed/enabled/started under that name.
+override_dh_installsystemd:
+	dh_installsystemd --name=rtpengine

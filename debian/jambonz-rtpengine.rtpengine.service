@@ -1,0 +1,51 @@
+[Unit]
+Description=jambonz RTP/media proxy
+After=syslog.target network-online.target local-fs.target remote-fs.target
+Requires=network-online.target
+
+[Service]
+Type=notify
+
+# Operators may set RTPENGINE_LOCAL_IP / RTPENGINE_PUBLIC_IP (or other
+# overrides) here. host.env is written by jambonz-common's postinst.
+EnvironmentFile=-/etc/default/rtpengine
+EnvironmentFile=-/var/lib/jambonz/host.env
+
+RuntimeDirectory=rtpengine
+PIDFile=/run/rtpengine/rtpengine.pid
+
+# Auto-detect IPs only when the env doesn't supply a value. Same pattern as
+# drachtio.service. Required for the --interface args below — without a
+# public IP rtpengine advertises the private address and external audio
+# fails behind NAT.
+ExecStartPre=/bin/sh -c '\
+    [ -n "$RTPENGINE_LOCAL_IP" ] || \
+      systemctl set-environment RTPENGINE_LOCAL_IP=$(set -- $(hostname -I); echo $1)'
+ExecStartPre=/bin/sh -c '\
+    [ -n "$RTPENGINE_PUBLIC_IP" ] || \
+      systemctl set-environment RTPENGINE_PUBLIC_IP=$(curl -s --max-time 5 https://api.ipify.org || { set -- $(hostname -I); echo $1; })'
+
+ExecStart=/usr/bin/rtpengine -f -E --no-log-timestamps \
+    --pidfile /run/rtpengine/rtpengine.pid \
+    --config-file /etc/rtpengine/rtpengine.conf \
+    --interface private/${RTPENGINE_LOCAL_IP} \
+    --interface public/${RTPENGINE_LOCAL_IP}!${RTPENGINE_PUBLIC_IP}
+
+TimeoutSec=15s
+Restart=always
+
+User=root
+Group=daemon
+LimitCORE=infinity
+LimitNOFILE=150000
+LimitNPROC=60000
+LimitRTPRIO=infinity
+LimitRTTIME=7000000
+IOSchedulingClass=realtime
+IOSchedulingPriority=2
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=89
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target

@@ -1,3 +1,89 @@
+jambonz-rtpengine (14.1.1.8-jambonz9) bookworm; urgency=medium
+
+  * docs: fix gh workflow status check command in README
+
+ -- jambonz <support@jambonz.org>  Wed, 25 Jun 2026 12:00:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz8) bookworm; urgency=medium
+
+  * docs: add local arm64 build instructions to README
+  * ci: GitHub arm64 runners unavailable; document local build workflow
+
+ -- jambonz <support@jambonz.org>  Wed, 25 Jun 2026 11:00:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz7) bookworm; urgency=medium
+
+  * Fix regression in jambonz6: `cut -d' ' -f1` had nested single quotes
+    inside the outer `sh -c '...'` block, which systemd's parser
+    interpreted as quote boundaries. Replace with `set -- $(hostname -I);
+    echo $1` — no inner quotes needed.
+
+ -- jambonz <support@jambonz.org>  Mon, 25 May 2026 19:00:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz6) bookworm; urgency=medium
+
+  * debian/jambonz-rtpengine.service: replace `awk "{print \$1}"` with
+    `cut -d' ' -f1` in the ExecStartPre IP-detection hooks. systemd's
+    unit-file parser doesn't recognize `\$` as a valid escape sequence
+    and logs "Ignoring unknown escape sequences" on every (re)start.
+    The command still worked (sh unescaped \$ back to $ inside the
+    double-quoted awk script) but the warning was noisy in journalctl.
+    Same fix landed in drachtio.service.
+
+ -- jambonz <support@jambonz.org>  Mon, 25 May 2026 18:00:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz5) bookworm; urgency=medium
+
+  * debian/jambonz-rtpengine.service: auto-detect public/private IPs and
+    pass them as --interface private/${LOCAL_IP} --interface public/${LOCAL_IP}!${PUBLIC_IP}.
+    Mirrors the drachtio.service pattern (ExecStartPre with hostname -I
+    and curl https://api.ipify.org fallbacks; operators can pre-set
+    RTPENGINE_LOCAL_IP / RTPENGINE_PUBLIC_IP via /etc/default/rtpengine
+    or /var/lib/jambonz/host.env to skip detection). Without this, the
+    shipped [interface-default] address=any made rtpengine advertise the
+    private address in SDP from NAT'd cloud VMs and external audio failed.
+    Also drops the upstream systemd sandboxing (ProtectSystem=strict,
+    SystemCallFilter, capability restrictions, etc.) so the ExecStartPre
+    detection and systemctl set-environment calls work — matches what
+    drachtio's service ships with.
+
+ -- jambonz <support@jambonz.org>  Mon, 25 May 2026 00:00:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz4) bookworm; urgency=medium
+
+  * etc/rtpengine.conf: bind HTTP/WS on 127.0.0.1:8080 (was localhost:2225)
+    and add dtmf-log-dest = 127.0.0.1:22223. Aligns the conf-file defaults
+    with what the rest of the jambonz stack expects: sbc-rtpengine-sidecar
+    connects to ws://127.0.0.1:8080 by default (rtpengine-client lib) and
+    binds a UDP socket on :22223 for DTMF events. Without these, the
+    sidecar crashed on first stats-collection tick with ECONNREFUSED, and
+    DTMF events were silently dropped.
+
+ -- jambonz <support@jambonz.org>  Wed, 06 May 2026 23:50:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz3) bookworm; urgency=medium
+
+  * Create rtpengine user/group in preinst (was postinst). Eliminates
+    a startup race where systemd's first attempt to start the daemon
+    failed with exit code 217 ("user not found"), printing a noisy
+    "Job for jambonz-rtpengine.service failed" line during apt install
+    on a fresh box. Restart=always recovered after a few seconds, but
+    the message alarmed customers. By creating the user before the
+    .service file is unpacked the first start now succeeds cleanly.
+
+ -- jambonz <support@jambonz.org>  Wed, 06 May 2026 23:30:00 +0000
+
+jambonz-rtpengine (14.1.1.8-jambonz2) bookworm; urgency=medium
+
+  * etc/rtpengine.conf: change listen-ng from sipwise default
+    localhost:2223 to the jambonz convention 127.0.0.1:22222.
+    The jambonz Node apps (sbc-inbound, sbc-outbound, feature-server)
+    target UDP :22222 via JAMBONES_RTPENGINES; with the upstream
+    default an inbound INVITE would hang silently for ~7s at sbc-inbound
+    waiting for a reply rtpengine never received (UDP, fire-and-forget).
+
+ -- jambonz <support@jambonz.org>  Wed, 06 May 2026 12:00:00 +0000
+
 jambonz-rtpengine (14.1.1.8-jambonz1) bookworm; urgency=medium
 
   * Initial release of the jambonz fork of sipwise/rtpengine.

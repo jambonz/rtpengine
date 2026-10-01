@@ -24,6 +24,10 @@ then
 fi
 
 if [ "$1" = configure ]; then
+	# User/group are created in the preinst (before any unit file is
+	# unpacked) to avoid a race where systemd's first start would fail
+	# with exit 217. Re-run defensively in case preinst was skipped or
+	# the user was deleted out of band — adduser is idempotent.
 	adduser --system --home /nonexistent --gecos rtpengine \
 		--no-create-home --disabled-password \
 		--group --quiet rtpengine || true

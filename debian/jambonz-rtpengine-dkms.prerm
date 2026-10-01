@@ -5,8 +5,8 @@ set -e
 # DKMS is about to remove the kernel module from the source tree; stop the
 # daemon (if running) and unload the module first.
 if [ -d /run/systemd/system ] && \
-   systemctl list-unit-files jambonz-rtpengine.service >/dev/null 2>&1; then
-	systemctl stop jambonz-rtpengine || true
+   systemctl list-unit-files rtpengine.service >/dev/null 2>&1; then
+	systemctl stop rtpengine || true
 fi
 rmmod nft_rtpengine 2>/dev/null || true
 

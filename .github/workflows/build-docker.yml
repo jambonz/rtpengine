@@ -1,0 +1,92 @@
+name: Build Docker Image
+
+# Triggers:
+#   - workflow_dispatch (manual run from the Actions tab)
+#   - push of a tag matching v*-jambonz* (our fork's release tags)
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*-jambonz*'
+
+# Serialize concurrent Docker runs (separate group from build-deb/build-rpm
+# so all three builds run in parallel on the same tag push).
+concurrency:
+  group: build-docker
+  cancel-in-progress: false
+
+jobs:
+  build-docker:
+    # Multi-arch (amd64 + arm64) is built via Docker Build Cloud, which
+    # provides native arm64 builders — no QEMU emulation. The runner only
+    # orchestrates; the actual compile runs on the cloud builders.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive version from git tag
+        id: version
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Prefer the triggering tag; fall back to git describe for manual
+          # workflow_dispatch runs.
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG=$(git describe --tags --always 2>/dev/null || echo "v0.0.0-jambonz0")
+          fi
+          # Strip leading 'v'. Docker tags allow '-', so keep the full
+          # version-release string, e.g. 14.1.1.8-jambonz10.
+          VERSION="${TAG#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building Docker image jambonz/rtpengine:${VERSION}"
+
+      - name: Stamp version into debian/changelog
+        # The Dockerfile build derives the baked-in RTPENGINE_VERSION from the
+        # top debian/changelog stanza (via dpkg-parsechangelog in
+        # utils/gen-common-flags). Rewrite it from the tag so the image's
+        # `rtpengine --version` matches the release — same approach as
+        # build-deb.yml. No Dockerfile change needed; COPY . . picks this up.
+        run: |
+          sed -i "0,/^jambonz-rtpengine (.*) bookworm/s//jambonz-rtpengine (${{ steps.version.outputs.VERSION }}) bookworm/" debian/changelog
+          head -3 debian/changelog
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx (Build Cloud)
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: cloud
+          # <org>/<builder-name> for Docker Build Cloud. The CI login user
+          # (DOCKERHUB_USERNAME) must be a member of the 'drachtio' org that
+          # owns this builder. Consider a dedicated 'drachtio/rtpengine-builder'
+          # instead of reusing the freeswitch one.
+          endpoint: "drachtio/freeswitch-builder"
+
+      - name: Docker metadata (tags/labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: jambonz/rtpengine
+          tags: |
+            type=raw,value=${{ steps.version.outputs.VERSION }}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
