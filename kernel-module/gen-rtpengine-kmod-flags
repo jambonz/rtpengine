@@ -79,4 +79,23 @@ TESTEOF
   fi
 
   rm -rf "${nft_test_dir}"
+
+  # Same for nft_expr_ops.dump: its bool reset (6.2) is backported to Debian 6.1.192+.
+  # Own directory, so make cannot reuse the validate probe's objects.
+  nft_test_dir=$(mktemp -d)
+  cat > "${nft_test_dir}/nft_test.c" <<'TESTEOF'
+#include <linux/module.h>
+#include <net/netfilter/nf_tables.h>
+static int test_dump(struct sk_buff *skb, const struct nft_expr *expr,
+    bool reset) { return 0; }
+static struct nft_expr_ops __attribute__((unused)) test_ops = {
+    .dump = test_dump };
+MODULE_LICENSE("GPL");
+TESTEOF
+  echo "obj-m := nft_test.o" > "${nft_test_dir}/Makefile"
+  if env -i PATH="$PATH" make -j1 -C "${KSRC}" M="${nft_test_dir}" modules >/dev/null 2>&1; then
+    echo "ccflags-y += -DNFT_EXPR_OPS_DUMP_HAS_RESET"
+  fi
+
+  rm -rf "${nft_test_dir}"
 fi
